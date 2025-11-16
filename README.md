@@ -41,4 +41,4 @@ To reproduce the True Positive Rate (TPR), False Positive Rate (FPR), and Latenc
 Please cite our published article when using this code. All documentation, figures, and video data are permanently archived.
 
 * **Final Figures & Methodology:** [10.5281/zenodo.17621800]
-* **Operational Sequence Video:** [10.5281/zenodo.17460755.]
+* **Operational Sequence Video:** [10.5281/zenodo.17460755]
