@@ -1,4 +1,4 @@
-# AFODS Sensor Fusion Code (vehicles-3989222)
+# AFODS Sensor Fusion Code
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue?style=flat-square)](https://opensource.org/licenses/Apache-2.0)
 [![DOI: MDPI](https://img.shields.io/badge/DOI-10.3390%2Fvehicles7040149-blue?style=flat-square)](https://doi.org/10.3390/vehicles7040149)
@@ -6,12 +6,15 @@
 [![Zenodo Video](https://img.shields.io/badge/Zenodo-Video_Demo-orange?style=flat-square)](https://doi.org/10.5281/zenodo.17460755)
 [![Python](https://img.shields.io/badge/Python-3.x-blue?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-CUDA-EE4C2C?style=flat-square&logo=pytorch&logoColor=white)](https://pytorch.org/)
+[![ISO 26262](https://img.shields.io/badge/Standard-ISO_26262_ASIL_B-red?style=flat-square)](https://www.iso.org/standard/43464.html)
+[![Patent](https://img.shields.io/badge/Patent-JP_2025--167440-green?style=flat-square)]()
 [![ORCID](https://img.shields.io/badge/ORCID-0000--0003--4641--0112-A6CE39?style=flat-square&logo=orcid&logoColor=white)](https://orcid.org/0000-0003-4641-0112)
 
-> **Authors:** Dr. Nick Barua · Prof. Masahito Hitosugi
-> AN Holdings Co., Nishinomiya City, Hyogo, Japan · Shiga University of Medical Science
-> **Published:** *Vehicles*, MDPI, 2025, 7(4), 149
-> **DOI:** [10.3390/vehicles7040149](https://doi.org/10.3390/vehicles7040149)
+> **Authors:** Dr. Nick Barua · Prof. Masahito Hitosugi  
+> Department of Legal Medicine, Shiga University of Medical Science, Otsu, Shiga, Japan  
+> **Published:** *Vehicles*, MDPI, 2025, 7(4), 149  
+> **DOI:** [10.3390/vehicles7040149](https://doi.org/10.3390/vehicles7040149)  
+> **Patent Filed:** Japanese Patent Application No. 2025-167440 (Filed: 3 October 2025)
 
 ---
 
@@ -19,10 +22,10 @@
 
 This repository contains the complete implementation scripts, configuration files, and core logic for the **Advanced Falling Object Detection System (AFODS)**, supporting the peer-reviewed manuscript:
 
-> **Advanced Multi-Modal Sensor Fusion System for Detecting Falling Humans: Quantitative Evaluation for Enhanced Vehicle Safety**
+> **Advanced Multi-Modal Sensor Fusion System for Detecting Falling Humans: Quantitative Evaluation for Enhanced Vehicle Safety**  
 > *Vehicles*, MDPI, 2025, 7(4), 149 · DOI: [10.3390/vehicles7040149](https://doi.org/10.3390/vehicles7040149)
 
-The codebase enables full replication of the methodology, benchmarks, and results presented in the paper.
+The codebase enables full replication of the methodology, benchmarks, and results presented in the paper. Validated across **320 controlled trials**, AFODS achieved **98.2% TPR at night (0 lux)** — a condition where the baseline visible-spectrum system collapsed to 21.4%.
 
 ---
 
@@ -30,45 +33,67 @@ The codebase enables full replication of the methodology, benchmarks, and result
 
 | Component | Implementation | Details |
 | :--- | :--- | :--- |
-| **Detection Model** | YOLOv7-Tiny | PyTorch · Cross-Entropy Loss · mAP@0.5: 91.3% |
-| **Prediction Model** | GRU (Gated Recurrent Unit) | Proactive fall assessment via pose sequences |
-| **Fusion Logic** | Confidence-weighted pipeline | Integrates LWIR · NIR Stereo · Ultrasonic |
-| **Acoustic Verification** | MFCC Classifier | Fall signature vs. road noise discrimination |
-| **Explainability** | SHAP Values | Forensic audit trail for post-incident reconstruction |
-| **Safety Standard** | ISO 26262 ASIL C-D | S3 / E3 / C0 hazard classification |
+| **Detection Model** | YOLOv7-Tiny | PyTorch · Cross-Entropy Loss · Adam optimiser · mAP@0.5: 91.3% |
+| **Prediction Model** | GRU (Gated Recurrent Unit) | Proactive fall assessment via normalised 2D pose keypoints over 1–2 s window |
+| **Fusion Logic** | Confidence-weighted pipeline | Dynamically integrates LWIR · NIR Stereo · Ultrasonic based on environmental conditions |
+| **Depth & Motion** | SGM + Lucas–Kanade optical flow | Dense disparity map + vertical motion tracking + lightweight pose estimation |
+| **Acoustic Verification** | MFCC Classifier (CNN/RNN) | Fall signature vs. road noise discrimination — corroborating factor only |
+| **Safety Standard** | ISO 26262 — target **ASIL B** | Redundant sensor modalities mitigate single-point failures |
 
 ---
 
-## 📊 Performance Benchmarks
+## 📊 Validated Performance (320 Controlled Trials)
 
-| Condition | TPR (%) | FPR (%) | mAP@0.5 (%) | Latency (ms) |
-| :--- | :---: | :---: | :---: | :---: |
-| **Daytime, Clear** | 98.2 | 1.8 | 91.3 | 38 |
-| **Night, Dry Road** | 95.6 | 3.1 | 88.7 | 42 |
-| **Night, Rain** | 89.4 | 5.2 | 83.1 | 51 |
-| *Baseline (Monocular, Night)* | *21.4* | *N/A* | *N/A* | *N/A* |
+All metrics are drawn directly from the peer-reviewed publication (Tables 1 & 2, Section 4). Each condition was repeated 20 times using standardised ATDs deployed via pneumatic rig at 20 m.
+
+### Detection Accuracy (True Positive Rate)
+
+| Environmental Condition | AFODS TPR (%) | Baseline TPR (%) | p-value |
+| :--- | :---: | :---: | :---: |
+| **Clear Daylight** | **99.5** | 96.8 | 0.041 |
+| **Night (0 lux)** | **98.2** | 21.4 | <0.001 |
+| **Rain (50 mm/h)** | **96.4** | 55.7 | <0.001 |
+| **Fog (<50 m visibility)** | **95.8** | 32.1 | <0.001 |
+
+### False Positive Rate
+
+| System | Condition | False Positives (per 24 h) | Reduction vs. Baseline |
+| :--- | :--- | :---: | :---: |
+| Baseline | Daytime | 16.4 | — |
+| Baseline | Nighttime | 31.2 | — |
+| Baseline | Adverse Weather | 48.9 | — |
+| **AFODS** | **Daytime** | **1.1** | **93.3%** |
+| **AFODS** | **Nighttime** | **1.5** | **95.2%** |
+| **AFODS** | **Adverse Weather** | **2.3** | **95.3%** |
+| **AFODS** | **Average** | **1.6** | **95.0%** |
+
+**Mean System Latency:** 46.3 ms (SD = 4.1 ms) across all 320 trials  
+**Mean Detection Range:** AFODS 41.5 m (SD = 4.8 m) vs. Baseline 22.3 m (SD = 12.5 m) — *t*(158) = 15.72, *p* < 0.001
 
 ---
 
 ## 🛠️ Setup and Installation
 
 ### Requirements
+
 - Python 3.x
 - NVIDIA CUDA support (recommended for optimal performance)
 
 ### 1. Clone the Repository
+
 ```bash
 git clone https://github.com/Nick-Barua/AFODS-Sensor-Fusion-Code.git
 cd AFODS-Sensor-Fusion-Code
 ```
 
 ### 2. Install Dependencies
+
 ```bash
 pip install -r requirements.txt
 ```
 
 Core dependencies include:
-```txt
+
 torch>=2.0.0
 torchvision>=0.15.0
 opencv-python>=4.8.0
@@ -82,7 +107,6 @@ matplotlib>=3.7.0
 pyyaml>=6.0
 onnx>=1.14.0
 onnxruntime>=1.15.0
-```
 
 ---
 
@@ -91,13 +115,16 @@ onnxruntime>=1.15.0
 To reproduce the TPR, FPR, and Latency metrics from **Section 4** of the manuscript:
 
 ### Step 1 — Fetch Validation Data
+
 Download validation data logs from the Zenodo archive:
+
 - **Figures & Methodology:** [10.5281/zenodo.17621800](https://doi.org/10.5281/zenodo.17621800)
 - **Operational Sequence Video:** [10.5281/zenodo.17460755](https://doi.org/10.5281/zenodo.17460755)
 
 ### Step 2 — Run Detection Validation
+
 ```bash
-# Reproduce night condition metrics
+# Reproduce night condition metrics (primary novel claim)
 python validation_scripts/calculate_detection_metrics.py \
   --condition night \
   --model afods
@@ -107,13 +134,14 @@ python validation_scripts/calculate_detection_metrics.py \
   --condition daytime \
   --model afods
 
-# Compare against monocular baseline
+# Compare against visible-spectrum baseline
 python validation_scripts/calculate_detection_metrics.py \
   --condition night \
   --model baseline_monocular
 ```
 
 ### Step 3 — Run SHAP Explainability
+
 ```bash
 python explainability/shap_audit_trail.py --input validation_logs/
 ```
@@ -148,26 +176,29 @@ python explainability/shap_audit_trail.py --input validation_logs/
 
 ## 🔗 Related Publications
 
-This repository is **Part 1** of a unified 4-paper road safety research program:
+This repository is part of a unified research program on sensor fusion and road safety:
 
 | # | Title | Venue | Role |
 | :---: | :--- | :---: | :--- |
 | **1** | **Advanced Multi-Modal Sensor Fusion System** *(this repo)* | MDPI Vehicles | Technical foundation & benchmarks |
-| 2 | [From Post-Mortem to Prevention: Redefining "Invisible" Pedestrians through ISO 26262 and Multi-Modal AI](https://doi.org/10.2139/ssrn.6305618) | SSRN | Problem framing & ISO 26262 compliance |
-| 3 | [Integrated Safety Architectures: Leveraging Multi-Modal AI and ISO 26262 to Protect Vulnerable Road Users](https://ssrn.com/abstract=6112086) | SSRN | System-level VRU architecture |
-| 4 | Sudden Incapacitation or Death at the Wheel: Unravelling the Predictors of Catastrophic Multi-Vehicle Collisions | SSRN *(pending)* | Epidemiological evidence for ADAS mandate |
+| 2 | [Integrated Safety Architectures: Leveraging Multi-Modal AI and ISO 26262 to Protect Vulnerable Road Users](https://doi.org/10.2139/ssrn.6112086) | SSRN | System-level ISO 26262 safety architecture |
+| 3 | [From Post-Mortem to Prevention: Redefining "Invisible" Pedestrians through ISO 26262 and Multi-Modal AI](https://doi.org/10.2139/ssrn.6305618) | SSRN | Problem framing & ISO 26262 compliance |
+| 4 | [Sudden Incapacitation or Death at the Wheel: Probabilistic Risk Factors for Catastrophic Multi-Vehicle Collisions](https://doi.org/10.2139/ssrn.6305478) | SSRN | Epidemiological evidence for ADAS mandate |
+| 5 | [The Invisible Victims of the Road: Why ADAS Cannot See the Pedestrians Most Likely to Die](https://doi.org/10.20944/preprints202604.0850.v1) | Preprints.org *(under review)* | AFODS forensic injury translation & regulatory advocacy |
+| 6 | [A Physics-Grounded Multi-Modal Sensor Fusion Framework for Pedestrian Impact Kinematic Reconstruction Under Uncertainty: Phase 1 Design and Theoretical Evaluation](https://doi.org/10.3390/s26113387) | MDPI Sensors | Forensic reconstruction companion — retrospective kinematic reconstruction from post-impact scene observables |
 
 ---
 
 ## 📂 Related Repositories
 
-- **[sensor-fusion-fall-detection](https://github.com/Nick-Barua/sensor-fusion-fall-detection)** — AFODS framework documentation *(MDPI Vehicles, 2025)*
+- **[Advanced-Multi-Modal-Sensor-Fusion-System-for-Detecting-Falling-Humans](https://github.com/Nick-Barua/Advanced-Multi-Modal-Sensor-Fusion-System-for-Detecting-Falling-Humans)** — Primary repository with full system documentation and figures
 - **[AFODS-Operational-Sequence](https://github.com/Nick-Barua/AFODS-Operational-Sequence)** — Five-stage pipeline diagrams and graphical abstract
 - **[From-Post-Mortem-to-Prevention-AFODS](https://github.com/Nick-Barua/From-Post-Mortem-to-Prevention-AFODS)** — ISO 26262-aligned conceptual framework
 
 ---
 
 ## 📝 Citation
+
 ```bibtex
 @article{vehicles7040149,
   author    = {Barua, Nick and Hitosugi, Masahito},
@@ -188,3 +219,5 @@ This repository is **Part 1** of a unified 4-paper road safety research program:
 ## 📜 License
 
 This project is licensed under the **Apache 2.0 License** — see the [LICENSE](LICENSE) file for details.
+
+The system described in this repository is subject to **Japanese Patent Application No. 2025-167440** (Filed: 3 October 2025).
